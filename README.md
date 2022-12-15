@@ -7,9 +7,11 @@ See demo here: https://vagran.github.io/dxf-viewer-example/
 
 `npm run my-build` to build the distribution.
 
-`npm run my-serve` to run development server.
-
 IMPORTANT: To make newly created build work, you need to rename "/dist/index.html" to "/dist/index.php"
+
+`npm run my-serve` to run development server. 
+
+IMPORTANT: to run locally edit "/src/index.html". see comments at line 22
 
 Place static files(e.g. dxf) to "/public"
 
