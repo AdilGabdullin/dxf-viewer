@@ -4,7 +4,7 @@
         <q-toolbar>
             <q-toolbar-title :shrink="true" >DXF viewer</q-toolbar-title>
             <q-file color="white" label-color="white" filled bottom-slots clearable dense
-                    :value="inputFile" label="Select file or drag here" style="max-width: 300px;"
+                    :value="inputFile" label="Select file or drag here" style="max-width: 300px; display: none;"
                     accept=".dxf"
                     class="q-ml-xl" dark @input="_OnFileSelected" @clear="_OnFileCleared">
                 <template v-slot:before>
@@ -21,10 +21,14 @@
             <q-space />
             <q-btn icon="fab fa-github" color="primary" label="dxf-viewer on GitHub" no-caps
                    class="q-mx-sm github" type="a"
-                   href="https://github.com/vagran/dxf-viewer" />
+                   href="https://github.com/vagran/dxf-viewer"
+                   style="display: none;"
+                   />
             <q-btn icon="fab fa-github" color="primary" label="This example on GitHub" no-caps
                    class="q-mx-sm github" type="a"
-                   href="https://github.com/vagran/dxf-viewer-example-src" />
+                   href="https://github.com/vagran/dxf-viewer-example-src"
+                   style="display: none;"
+                   />
         </q-toolbar>
     </q-header>
     <q-page-container>
