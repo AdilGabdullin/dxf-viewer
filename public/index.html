@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="keywords" content="DXF, viewer, online, Javascript, WebGL, HTML5, example, vue.js, Quasar, CAD">
+    <meta name="description" content="Open source high performance online DXF viewer written in JavaScript using HTML5 WebGL">
+    <meta name="google-site-verification" content="imGGLudJ0TdhZAHi4i7WXY9LNWHt6zU4GT95Sz-QBLE" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="icon" href="<%= BASE_URL %>favicon.png" type="image/png">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NMQ038XS8C"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-NMQ038XS8C');
+    </script>
+    <title>JavaScript DXF viewer example</title>
+</head>
+<body data-dxf="<?= $_GET['file'] ?>">
+<!-- Place here for better googling. -->
+    <main id="about">
+        This is an example of <a href="https://github.com/vagran/dxf-viewer">dxf-viewer</a>
+        package application. It is written using <a href="https://quasar.dev/">Quasar</a>
+        framework (based on <a href="https://vuejs.org">Vue.js</a>) for fancy UI. The viewer
+        itself is DXF 2D viewer component written in JavaScript. It renders drawings using WebGL
+        (via <a href="https://threejs.org/">three.js</a> library). It was carefully crafted with
+        performance in mind, intended for drawing huge real-world files without performance
+        problems.
+    </main>
+    <div id="app" v-cloak class="hasLoadingPlaceholder"></div>
+    <noscript id="noscript">
+        JavaScript must be enabled to run this page.
+    </noscript>
+</body>
+</html>
