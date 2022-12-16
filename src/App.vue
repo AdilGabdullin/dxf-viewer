@@ -49,7 +49,7 @@
                     </q-file>
                 </div>
                 <div class="col-auto q-mx-lg q-pb-lg">
-                    <q-btn label="Load URL" @click="urlDialog = true"/>
+                    <q-btn label="Load URL" @click="urlDialog = true" style="display: none;"/>
                 </div>
             </div>
         </ViewerPage>
@@ -160,10 +160,15 @@ export default {
         aboutBlock.style.display = "none"
         /* For web crawler. */
         document.getElementById("noscript").innerText = aboutBlock.innerText
-        fetch(`./dxf/${document.body.dataset.dxf}.dxf`)
+
+        /* load file from query param */
+        const params = new URLSearchParams(window.location.search)
+        if(!params.has('file')) return;
+        const filename = `./dxf/${params.get('file')}.dxf`
+        fetch(filename)
             .then(res => res.text())
             .then(data => {
-                const file = new File([data], '/example.dxf', { type: "text/plain" })
+                const file = new File([data], filename, { type: "text/plain" })
                 this.inputFile = file
                 this.isLocalFile = true
                 this.dxfUrl = URL.createObjectURL(file)
