@@ -180,14 +180,6 @@ export default {
     mounted() {
         const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
         this.measurement = new Measurement(viewer)
-        viewer.Subscribe('pointerdown', e => {
-        })
-        viewer.Subscribe('pointerup', e => {
-            const button = e.detail.domEvent.button
-            const {x, y} = e.detail.position
-            if(button === 0) this.measurement.addPoint(x, y)
-            if(button === 2) this.measurement.removePoint()
-        })
     },
 
     destroyed() {
