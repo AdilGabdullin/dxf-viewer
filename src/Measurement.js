@@ -1,5 +1,8 @@
 import * as THREE from "three";
 
+const primaryColor = "green";
+const secondaryColor = 0x98fb98;
+
 class Measurement {
   constructor(viewer) {
     this.viewer = viewer;
@@ -82,7 +85,7 @@ class Measurement {
   addPoint(x, y) {
     const { viewer, points } = this;
     const geometry = new THREE.CircleGeometry(this.getRadius(), 32);
-    const material = new THREE.MeshBasicMaterial({ color: 0x0 });
+    const material = new THREE.MeshBasicMaterial({ color: primaryColor });
     const point = new THREE.Mesh(geometry, material);
     point.position.x = x;
     point.position.y = y;
@@ -105,11 +108,11 @@ class Measurement {
   updateColors() {
     const { points, closed } = this;
     for (const point of points) {
-      point.material.color.set(0x0);
+      point.material.color.set(primaryColor);
       point.geometry = new THREE.CircleGeometry(this.getRadius(), 32);
     }
     if (!closed && points.length > 0) {
-      points[0].material.color.set(0x707070);
+      points[0].material.color.set(secondaryColor);
     }
   }
 
@@ -117,7 +120,7 @@ class Measurement {
     const { viewer, points, line, closed } = this;
     const scene = viewer.scene;
     const material = new THREE.LineBasicMaterial({
-      color: 0x0,
+      color: primaryColor,
     });
     const linePoints = [...points, ...(closed ? [points[0]] : [])];
     const geometry = new THREE.BufferGeometry().setFromPoints(
