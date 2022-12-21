@@ -6,10 +6,8 @@ class Measurement {
     this.points = [];
     this.line = null;
     this.closed = false;
-    this.data = {
-      distance: undefined,
-      area: undefined,
-    };
+    this.data = {};
+    this.pointerDown = {};
     this.observers = [];
     this.initEvents();
   }
@@ -22,16 +20,22 @@ class Measurement {
     const { viewer } = this;
     const canvas = viewer.GetCanvas();
     canvas.addEventListener("mousemove", (e) => {
-      const { x, y } = this.getWorldCoordinates(e.layerX, e.layerY);
+      const { x, y } = this.getWorldCoordinates(e.offsetX, e.offsetY);
       const hovered = this.searchPoint(x, y);
       canvas.style.cursor = hovered ? "pointer" : "default";
     });
     canvas.addEventListener("wheel", (e) => {
       this.render();
     });
+    viewer.Subscribe("pointerdown", (e) => {
+      const { offsetX, offsetY } = e.detail.domEvent;
+      this.pointerDown = { x: offsetX, y: offsetY };
+    });
     viewer.Subscribe("pointerup", (e) => {
-      const { x, y } = e.detail.position;
-      const button = e.detail.domEvent.button;
+      const { position, domEvent } = e.detail;
+      const { x, y } = position;
+      if (this.isDragged(domEvent)) return;
+      const button = domEvent.button;
       if (button === 0) {
         this.onClick(x, y);
       } else if (button === 2) {
@@ -39,6 +43,13 @@ class Measurement {
       }
       this.render();
     });
+  }
+
+  isDragged(domEvent) {
+    const { offsetX, offsetY } = domEvent;
+    const dx = offsetX - this.pointerDown.x;
+    const dy = offsetY - this.pointerDown.y;
+    return Math.abs(dx) + Math.abs(dy) > 10;
   }
 
   onClick(x, y) {
