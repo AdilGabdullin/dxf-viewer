@@ -6,7 +6,16 @@ class Measurement {
     this.points = [];
     this.line = null;
     this.closed = false;
+    this.data = {
+      distance: undefined,
+      area: undefined,
+    };
+    this.observers = [];
     this.initEvents();
+  }
+
+  subscribe(callback) {
+    this.observers.push(callback);
   }
 
   initEvents() {
@@ -19,7 +28,12 @@ class Measurement {
     });
     viewer.Subscribe("pointerup", (e) => {
       const { x, y } = e.detail.position;
-      this.onClick(x, y);
+      const button = e.detail.domEvent.button;
+      if (button === 0) {
+        this.onClick(x, y);
+      } else if (button === 2) {
+        this.removeAllPoints();
+      }
       this.render();
     });
   }
@@ -29,13 +43,19 @@ class Measurement {
     if (clicked === null) {
       this.addPoint(x, y);
     } else if (this.points.length === 2) {
-      this.removePoint(this.points[1]);
-      this.removePoint(this.points[0]);
+      this.removeAllPoints();
     } else if (clicked === this.points[0] && !this.closed) {
       this.closed = true;
     } else {
       this.removePoint(clicked);
     }
+  }
+
+  render() {
+    this.updateColors();
+    this.updateLine();
+    this.updateData();
+    this.viewer.Render();
   }
 
   addPoint(x, y) {
@@ -49,16 +69,16 @@ class Measurement {
     viewer.scene.add(point);
   }
 
+  removeAllPoints() {
+    this.points.map((p) => this.viewer.scene.remove(p));
+    this.points = [];
+    this.closed = false;
+  }
+
   removePoint(point) {
     this.viewer.scene.remove(point);
     this.points = this.points.filter((p) => p !== point);
     this.closed = false;
-  }
-
-  render() {
-    this.updateColors();
-    this.updateLine();
-    this.viewer.Render();
   }
 
   updateColors() {
@@ -85,13 +105,49 @@ class Measurement {
     scene.add(nextLine);
   }
 
+  updateData() {
+    const calcDistance = (points, closed) => {
+      const getDistance = (p1, p2) => {
+        const dx = p1.position.x - p2.position.x;
+        const dy = p1.position.y - p2.position.y;
+        return Math.sqrt(dx * dx + dy * dy);
+      };
+      let distance = 0.0;
+      points.forEach((point, index) => {
+        if (index === 0) return;
+        distance += getDistance(point, points[index - 1]);
+      });
+      if (closed) {
+        distance += getDistance(points.at(0), points.at(-1));
+      }
+      return distance;
+    };
+    const calcPolygonArea = (points) => {
+      const vertices = points.map((p) => p.position);
+      let total = 0;
+      for (let i = 0, l = vertices.length; i < l; i++) {
+        const addX = vertices[i].x;
+        const addY = vertices[i == vertices.length - 1 ? 0 : i + 1].y;
+        const subX = vertices[i == vertices.length - 1 ? 0 : i + 1].x;
+        const subY = vertices[i].y;
+        total += addX * addY * 0.5;
+        total -= subX * subY * 0.5;
+      }
+      return Math.abs(total);
+    };
+    const { points, observers, closed } = this;
+    const distance = calcDistance(points, closed);
+    const area = closed ? calcPolygonArea(points) : 0.0;
+    this.data = { distance, area };
+    observers.forEach((callback) => callback(this.data));
+  }
+
   getWorldCoordinates(x, y) {
-    const canvas = this.viewer.GetCanvas();
-    return new THREE.Vector3(
-      (x / canvas.width) * 2 - 1,
-      -(y / canvas.height) * 2 + 1,
-      0.999
-    ).unproject(this.viewer.camera);
+    const viewer = this.viewer;
+    const canvas = viewer.GetCanvas();
+    const nx = (x / canvas.width) * 2 - 1;
+    const ny = -(y / canvas.height) * 2 + 1;
+    return new THREE.Vector3(nx, ny, 0.999).unproject(viewer.camera);
   }
 
   searchPoint(x, y) {

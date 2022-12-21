@@ -18,6 +18,7 @@
                 </template>
             </q-file>
             <q-btn icon="help" label="About" class="q-ml-lg" @click="aboutDialog = true"></q-btn>
+            <q-toolbar-title :shrink="true" ><span v-html="temp"></span></q-toolbar-title>
             <q-space />
             <q-btn icon="fab fa-github" color="primary" label="dxf-viewer on GitHub" no-caps
                    class="q-mx-sm github" type="a"
@@ -109,7 +110,8 @@ export default {
             isLocalFile: false,
             aboutDialog: false,
             urlDialog: false,
-            inputUrl: null
+            inputUrl: null,
+            temp: ''
         }
     },
 
@@ -180,6 +182,15 @@ export default {
     mounted() {
         const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
         this.measurement = new Measurement(viewer)
+        this.measurement.subscribe(({distance, area}) => {
+            if(!distance) {
+                this.temp = ''
+            } else if(!area) {
+                this.temp = `ditance: ${distance.toFixed(2)}m`
+            } else {
+                this.temp = `ditance: ${distance.toFixed(2)}m, area: ${area.toFixed(2)}m<sup>2</sup>`
+            }
+        })
     },
 
     destroyed() {
