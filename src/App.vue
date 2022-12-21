@@ -32,7 +32,7 @@
         </q-toolbar>
     </q-header>
     <q-page-container>
-        <ViewerPage :dxfUrl="dxfUrl">
+        <ViewerPage ref="viewerPage" :dxfUrl="dxfUrl">
             <div v-if="inputFile === null"
                  class="centralUploader row justify-center items-center" >
                 <div class="col-auto" style="width: 300px;">
@@ -96,7 +96,9 @@
 </q-layout>
 </template>
 <script>
-import ViewerPage from "@/components/ViewerPage";
+import ViewerPage from "@/components/ViewerPage"
+import Measurement from "./Measurement"
+
 export default {
     components: {ViewerPage},
 
@@ -174,6 +176,20 @@ export default {
                 this.dxfUrl = URL.createObjectURL(file)
             })
     },
+
+    mounted() {
+        const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
+        this.measurement = new Measurement(viewer)
+        viewer.Subscribe('pointerdown', e => {
+        })
+        viewer.Subscribe('pointerup', e => {
+            const button = e.detail.domEvent.button
+            const {x, y} = e.detail.position
+            if(button === 0) this.measurement.addPoint(x, y)
+            if(button === 2) this.measurement.removePoint()
+        })
+    },
+
     destroyed() {
         if (this.dxfUrl) {
             URL.revokeObjectURL(this.dxfUrl)
