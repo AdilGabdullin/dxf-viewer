@@ -17,9 +17,9 @@
                     <q-btn dense flat label="URL" @click="urlDialog = true"/>
                 </template>
             </q-file>
-            <q-btn icon="help" label="About" class="q-ml-lg" @click="aboutDialog = true"></q-btn>
             <q-toolbar-title :shrink="true" ><span v-html="temp"></span></q-toolbar-title>
             <q-space />
+            <q-btn icon="help" label="About" class="q-ml-lg" @click="aboutDialog = true"></q-btn>
             <q-btn icon="fab fa-github" color="primary" label="dxf-viewer on GitHub" no-caps
                    class="q-mx-sm github" type="a"
                    href="https://github.com/vagran/dxf-viewer"

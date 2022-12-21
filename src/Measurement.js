@@ -26,6 +26,9 @@ class Measurement {
       const hovered = this.searchPoint(x, y);
       canvas.style.cursor = hovered ? "pointer" : "default";
     });
+    canvas.addEventListener("wheel", (e) => {
+      this.render();
+    });
     viewer.Subscribe("pointerup", (e) => {
       const { x, y } = e.detail.position;
       const button = e.detail.domEvent.button;
@@ -58,9 +61,16 @@ class Measurement {
     this.viewer.Render();
   }
 
+  getRadius() {
+    return (
+      this.viewer._CanvasToSceneCoord(5.0, 0).x -
+      this.viewer._CanvasToSceneCoord(0, 0).x
+    );
+  }
+
   addPoint(x, y) {
     const { viewer, points } = this;
-    const geometry = new THREE.CircleGeometry(3, 32);
+    const geometry = new THREE.CircleGeometry(this.getRadius(), 32);
     const material = new THREE.MeshBasicMaterial({ color: 0x0 });
     const point = new THREE.Mesh(geometry, material);
     point.position.x = x;
@@ -85,6 +95,7 @@ class Measurement {
     const { points, closed } = this;
     for (const point of points) {
       point.material.color.set(0x0);
+      point.geometry = new THREE.CircleGeometry(this.getRadius(), 32);
     }
     if (!closed && points.length > 0) {
       points[0].material.color.set(0x707070);
@@ -94,7 +105,9 @@ class Measurement {
   updateLine() {
     const { viewer, points, line, closed } = this;
     const scene = viewer.scene;
-    const material = new THREE.LineBasicMaterial({ color: 0x0 });
+    const material = new THREE.LineBasicMaterial({
+      color: 0x0,
+    });
     const linePoints = [...points, ...(closed ? [points[0]] : [])];
     const geometry = new THREE.BufferGeometry().setFromPoints(
       linePoints.map((p) => p.position)
@@ -143,15 +156,11 @@ class Measurement {
   }
 
   getWorldCoordinates(x, y) {
-    const viewer = this.viewer;
-    const canvas = viewer.GetCanvas();
-    const nx = (x / canvas.width) * 2 - 1;
-    const ny = -(y / canvas.height) * 2 + 1;
-    return new THREE.Vector3(nx, ny, 0.999).unproject(viewer.camera);
+    return this.viewer._CanvasToSceneCoord(x, y);
   }
 
   searchPoint(x, y) {
-    const threshold = 4;
+    const threshold = this.getRadius();
     for (const point of this.points) {
       const dx = x - point.position.x;
       const dy = y - point.position.y;
