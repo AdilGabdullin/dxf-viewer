@@ -1,7 +1,10 @@
 import * as THREE from "three";
 
-const primaryColor = "green";
-const secondaryColor = 0x98fb98;
+const PRIMARY_COLOR = "green";
+const SECONDARY_COLOR = 0x98fb98;
+const DRAG_THRESHOLD = 5;
+const POINT_RADIUS = 5;
+const LINE_MATERIAL = new THREE.LineBasicMaterial({ color: PRIMARY_COLOR });
 
 class Measurement {
   constructor(viewer) {
@@ -22,37 +25,29 @@ class Measurement {
   initEvents() {
     const { viewer } = this;
     const canvas = viewer.GetCanvas();
-    canvas.addEventListener("mousemove", (e) => {
-      const { x, y } = this.getWorldCoordinates(e.offsetX, e.offsetY);
-      const hovered = this.searchPoint(x, y);
-      canvas.style.cursor = hovered ? "pointer" : "default";
-    });
-    canvas.addEventListener("wheel", (e) => {
-      this.render();
+    canvas.addEventListener("wheel", () => this.render());
+    canvas.addEventListener("mousemove", ({ offsetX, offsetY }) => {
+      const { x, y } = viewer._CanvasToSceneCoord(offsetX, offsetY);
+      canvas.style.cursor = this.searchPoint(x, y) ? "pointer" : "default";
     });
     viewer.Subscribe("pointerdown", (e) => {
       const { offsetX, offsetY } = e.detail.domEvent;
       this.pointerDown = { x: offsetX, y: offsetY };
     });
     viewer.Subscribe("pointerup", (e) => {
-      const { position, domEvent } = e.detail;
-      const { x, y } = position;
-      if (this.isDragged(domEvent)) return;
-      const button = domEvent.button;
-      if (button === 0) {
-        this.onClick(x, y);
-      } else if (button === 2) {
-        this.removeAllPoints();
-      }
+      if (this.isDragged(e.detail.domEvent)) return;
+      const { x, y } = e.detail.position;
+      const button = e.detail.domEvent.button;
+      if (button === 0) this.onClick(x, y);
+      if (button === 2) this.removeAllPoints();
       this.render();
     });
   }
 
   isDragged(domEvent) {
     const { offsetX, offsetY } = domEvent;
-    const dx = offsetX - this.pointerDown.x;
-    const dy = offsetY - this.pointerDown.y;
-    return Math.abs(dx) + Math.abs(dy) > 10;
+    const { x, y } = this.pointerDown;
+    return Math.abs(offsetX - x) + Math.abs(offsetY - y) > DRAG_THRESHOLD;
   }
 
   onClick(x, y) {
@@ -69,28 +64,32 @@ class Measurement {
   }
 
   render() {
-    this.updateColors();
+    this.updatePoints();
     this.updateLine();
     this.updateData();
     this.viewer.Render();
   }
 
-  getRadius() {
+  getPointRadius() {
+    const viewer = this.viewer;
     return (
-      this.viewer._CanvasToSceneCoord(5.0, 0).x -
-      this.viewer._CanvasToSceneCoord(0, 0).x
+      viewer._CanvasToSceneCoord(POINT_RADIUS, 0).x -
+      viewer._CanvasToSceneCoord(0, 0).x
     );
   }
 
   addPoint(x, y) {
     const { viewer, points } = this;
-    const geometry = new THREE.CircleGeometry(this.getRadius(), 32);
-    const material = new THREE.MeshBasicMaterial({ color: primaryColor });
-    const point = new THREE.Mesh(geometry, material);
+    const pointMaterial = new THREE.MeshBasicMaterial({ color: PRIMARY_COLOR });
+    const point = new THREE.Mesh(this.getPointGeometry(), pointMaterial);
     point.position.x = x;
     point.position.y = y;
     points.push(point);
     viewer.scene.add(point);
+  }
+
+  getPointGeometry() {
+    return new THREE.CircleGeometry(this.getPointRadius(), 32);
   }
 
   removeAllPoints() {
@@ -105,48 +104,42 @@ class Measurement {
     this.closed = false;
   }
 
-  updateColors() {
+  updatePoints() {
     const { points, closed } = this;
     for (const point of points) {
-      point.material.color.set(primaryColor);
-      point.geometry = new THREE.CircleGeometry(this.getRadius(), 32);
+      point.material.color.set(PRIMARY_COLOR);
+      point.geometry = this.getPointGeometry();
     }
     if (!closed && points.length > 0) {
-      points[0].material.color.set(secondaryColor);
+      points[0].material.color.set(SECONDARY_COLOR);
     }
   }
 
   updateLine() {
     const { viewer, points, line, closed } = this;
     const scene = viewer.scene;
-    const material = new THREE.LineBasicMaterial({
-      color: primaryColor,
-    });
     const linePoints = [...points, ...(closed ? [points[0]] : [])];
     const geometry = new THREE.BufferGeometry().setFromPoints(
       linePoints.map((p) => p.position)
     );
-    const nextLine = new THREE.Line(geometry, material);
+    const nextLine = new THREE.Line(geometry, LINE_MATERIAL);
     this.line = nextLine;
     if (line) scene.remove(line);
     scene.add(nextLine);
   }
 
   updateData() {
+    const getDistance = (p1, p2) => {
+      const dx = p1.position.x - p2.position.x;
+      const dy = p1.position.y - p2.position.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
     const calcDistance = (points, closed) => {
-      const getDistance = (p1, p2) => {
-        const dx = p1.position.x - p2.position.x;
-        const dy = p1.position.y - p2.position.y;
-        return Math.sqrt(dx * dx + dy * dy);
-      };
       let distance = 0.0;
       points.forEach((point, index) => {
-        if (index === 0) return;
-        distance += getDistance(point, points[index - 1]);
+        if (index === 0 && !closed) return;
+        distance += getDistance(point, points.at(index - 1));
       });
-      if (closed) {
-        distance += getDistance(points.at(0), points.at(-1));
-      }
       return distance;
     };
     const calcPolygonArea = (points) => {
@@ -169,18 +162,12 @@ class Measurement {
     observers.forEach((callback) => callback(this.data));
   }
 
-  getWorldCoordinates(x, y) {
-    return this.viewer._CanvasToSceneCoord(x, y);
-  }
-
   searchPoint(x, y) {
-    const threshold = this.getRadius();
+    const threshold = this.getPointRadius();
     for (const point of this.points) {
       const dx = x - point.position.x;
       const dy = y - point.position.y;
-      if (dx * dx + dy * dy < threshold * threshold) {
-        return point;
-      }
+      if (dx * dx + dy * dy < threshold * threshold) return point;
     }
     return null;
   }

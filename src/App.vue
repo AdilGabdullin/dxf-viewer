@@ -181,14 +181,14 @@ export default {
 
     mounted() {
         const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
-        this.measurement = new Measurement(viewer)
-        this.measurement.subscribe(({distance, area}) => {
+        const measurement = new Measurement(viewer)
+        measurement.subscribe(({distance, area}) => {
             if(!distance) {
                 this.temp = ''
             } else if(!area) {
-                this.temp = `ditance: ${distance.toFixed(2)}m`
+                this.temp = `distance: ${distance.toFixed(2)}m`
             } else {
-                this.temp = `ditance: ${distance.toFixed(2)}m, area: ${area.toFixed(2)}m<sup>2</sup>`
+                this.temp = `distance: ${distance.toFixed(2)}m, area: ${area.toFixed(2)}m<sup>2</sup>`
             }
         })
     },
