@@ -14,6 +14,7 @@ class Measurement {
     this.closed = false;
     this.pointerDown = {};
     this.observers = [];
+    this.active = false;
     this.initEvents();
   }
 
@@ -24,23 +25,40 @@ class Measurement {
   initEvents() {
     const { viewer } = this;
     const canvas = viewer.GetCanvas();
-    canvas.addEventListener("wheel", () => this.render());
+    canvas.addEventListener("wheel", () => {
+      if (!this.active) return;
+      this.render();
+    });
     canvas.addEventListener("mousemove", ({ offsetX, offsetY }) => {
+      if (!this.active) return;
       const { x, y } = viewer._CanvasToSceneCoord(offsetX, offsetY);
       canvas.style.cursor = this.searchPoint(x, y) ? "pointer" : "default";
     });
     viewer.Subscribe("pointerdown", (e) => {
+      if (!this.active) return;
       const { offsetX, offsetY } = e.detail.domEvent;
       this.pointerDown = { x: offsetX, y: offsetY };
     });
     viewer.Subscribe("pointerup", (e) => {
+      if (!this.active) return;
       if (this.isDragged(e.detail.domEvent)) return;
       const { x, y } = e.detail.position;
       const button = e.detail.domEvent.button;
       if (button === 0) this.onClick(x, y);
-      if (button === 2) this.removeAllPoints();
+      if (button === 2) this.turnOff();
       this.render();
     });
+  }
+
+  turnOff() {
+    this.active = false;
+    this.viewer.GetCanvas().style.cursor = "default";
+    this.removeAllPoints();
+    this.render();
+  }
+
+  turnOn() {
+    this.active = true;
   }
 
   isDragged(domEvent) {
@@ -142,7 +160,7 @@ class Measurement {
       return distance;
     };
     const calcPolygonArea = (points) => {
-      if(!this.closed) return 0;
+      if (!this.closed) return 0;
       const vertices = points.map((p) => p.position);
       let total = 0;
       for (let i = 0, l = vertices.length; i < l; i++) {

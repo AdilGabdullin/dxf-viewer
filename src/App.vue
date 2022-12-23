@@ -2,7 +2,7 @@
 <q-layout view="hHh lpr fff" data-nosnippet>
     <q-header>
         <q-toolbar>
-            <q-toolbar-title :shrink="true" >DXF viewer</q-toolbar-title>
+            <q-toolbar-title v-responsive.sm.md.lg.xl :shrink="true" >DXF viewer</q-toolbar-title>
             <q-file color="white" label-color="white" filled bottom-slots clearable dense
                     :value="inputFile" label="Select file or drag here" style="max-width: 300px; display: none;"
                     accept=".dxf"
@@ -17,22 +17,32 @@
                     <q-btn dense flat label="URL" @click="urlDialog = true"/>
                 </template>
             </q-file>
-            <div style="font-size: 1.25rem;" v-if="distance > 0">
+            <q-btn @click="measurement.turnOn();" v-if="!measurement.active">
+                <q-icon name="straighten" />
+                <div v-responsive.md.lg.xl style="margin-left: 0.75rem">Measure distance</div>
+            </q-btn>
+            <div style="font-size: 1.25rem" v-if="measurement.active">
                 <q-icon name="straighten" v-responsive.sm.xs />
                 <span v-responsive.md.lg.xl>distance:</span>
-                {{distance}}{{unit}}<span v-if="area > 0">,
+                {{distance}}{{unit}}
+                <br v-responsive.sm.xs />
+                <span v-if="area > 0">
                     <span v-responsive.sm.xs> S:</span>
-                    <span v-responsive.md.lg.xl> area:</span>
+                    <span v-responsive.md.lg.xl>, area:</span>
                     {{area}}{{unit}}<sup>2</sup>
                 </span>
             </div>
+            <q-btn class="q-ml-lg" @click="measurement.turnOff();" v-if="measurement.active">
+                <q-icon name="close" />
+                <div v-responsive.md.lg.xl style="margin-left: 0.75rem">Clear</div>
+            </q-btn>
             <q-space />
             <q-toggle
                 v-model="showLayers"
                 icon="layers"
                 color="green"
             />
-            <q-btn v-responsive.md.lg.xl icon="help" label="About" class="q-ml-lg" @click="aboutDialog = true"></q-btn>
+            <q-btn v-responsive.lg.xl icon="help" label="About" class="q-ml-lg" @click="aboutDialog = true"></q-btn>
             <q-btn icon="fab fa-github" color="primary" label="dxf-viewer on GitHub" no-caps
                    class="q-mx-sm github" type="a"
                    href="https://github.com/vagran/dxf-viewer"
@@ -127,7 +137,10 @@ export default {
             showLayers: true,
             distance: 0,
             area: 0,
-            unit: "m"
+            unit: "m",
+            measurement: {
+                active: false
+            }
         }
     },
 
@@ -204,10 +217,10 @@ export default {
                 const scale = config.relativeToDrawingUnit
                 this.unit = unit
                 const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
-                const measurement = new Measurement(viewer)
-                measurement.subscribe(({distance, area}) => {
+                this.measurement = new Measurement(viewer)
+                this.measurement.subscribe(({distance, area}) => {
                     this.distance = (distance / scale).toFixed(distancePrecision)
-                    this.area = (area / scale).toFixed(areaPrecision)
+                    this.area = (area / scale / scale).toFixed(areaPrecision)
                 })
             })
     },
