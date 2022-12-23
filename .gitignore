@@ -89,3 +89,8 @@ fabric.properties
 
 node_modules/
 .history/
+/dist/
+
+/.firebaserc
+/firebase.json
+/.firebase/
