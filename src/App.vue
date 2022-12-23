@@ -17,10 +17,10 @@
                     <q-btn dense flat label="URL" @click="urlDialog = true"/>
                 </template>
             </q-file>
-            <div style="font-size: 1.25rem;" v-if="distance">
+            <div style="font-size: 1.25rem;" v-if="distance > 0">
                 <q-icon name="straighten" v-responsive.sm.xs />
                 <span v-responsive.md.lg.xl>distance:</span>
-                {{distance}}{{unit}}<span v-if="area">,
+                {{distance}}{{unit}}<span v-if="area > 0">,
                     <span v-responsive.sm.xs> S:</span>
                     <span v-responsive.md.lg.xl> area:</span>
                     {{area}}{{unit}}<sup>2</sup>
@@ -197,12 +197,19 @@ export default {
     },
 
     mounted() {
-        const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
-        const measurement = new Measurement(viewer)
-        measurement.subscribe(({distance, area}) => {
-            this.distance = distance;
-            this.area = area;
-        })
+        fetch('./config.json')
+            .then(res => res.json())
+            .then((config) => {
+                const {unit, distancePrecision, areaPrecision} = config
+                const scale = config.relativeToDrawingUnit
+                this.unit = unit
+                const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
+                const measurement = new Measurement(viewer)
+                measurement.subscribe(({distance, area}) => {
+                    this.distance = (distance / scale).toFixed(distancePrecision)
+                    this.area = (area / scale).toFixed(areaPrecision)
+                })
+            })
     },
 
     destroyed() {
