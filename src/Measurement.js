@@ -32,20 +32,45 @@ class Measurement {
     canvas.addEventListener("mousemove", ({ offsetX, offsetY }) => {
       if (!this.active) return;
       const { x, y } = viewer._CanvasToSceneCoord(offsetX, offsetY);
-      canvas.style.cursor = this.searchPoint(x, y) ? "pointer" : "default";
+      const { grabbing } = this.pointerDown;
+      if (!grabbing) {
+        canvas.style.cursor = this.searchPoint(x, y) ? "pointer" : "default";
+        return;
+      }
+      grabbing.position.x = x;
+      grabbing.position.y = y;
+      this.render();
     });
     viewer.Subscribe("pointerdown", (e) => {
       if (!this.active) return;
       const { offsetX, offsetY } = e.detail.domEvent;
-      this.pointerDown = { x: offsetX, y: offsetY };
+      const { x, y } = viewer._CanvasToSceneCoord(offsetX, offsetY);
+      const grabbing = this.searchPoint(x, y);
+      this.pointerDown = { x: offsetX, y: offsetY, grabbing };
+      if (grabbing) {
+        viewer.controls.enabled = false;
+        canvas.style.cursor = "grabbing";
+      }
     });
     viewer.Subscribe("pointerup", (e) => {
       if (!this.active) return;
-      if (this.isDragged(e.detail.domEvent)) return;
       const { x, y } = e.detail.position;
+      const grabbing = this.pointerDown.grabbing;
+      const moved = this.cursorMoved(e.detail.domEvent);
+      if (grabbing && moved) {
+        grabbing.position.x = x;
+        grabbing.position.y = y;
+        viewer.controls.enabled = true;
+        canvas.style.cursor = "default";
+        this.pointerDown = {};
+        this.render();
+        return;
+      }
       const button = e.detail.domEvent.button;
-      if (button === 0) this.onClick(x, y);
-      if (button === 2) this.turnOff();
+      if (button === 0 && !moved) this.onClick(x, y);
+      if (button === 2) {
+        this.removeAllPoints();
+      }
       this.render();
     });
   }
@@ -61,7 +86,7 @@ class Measurement {
     this.active = true;
   }
 
-  isDragged(domEvent) {
+  cursorMoved(domEvent) {
     const { offsetX, offsetY } = domEvent;
     const { x, y } = this.pointerDown;
     return Math.abs(offsetX - x) + Math.abs(offsetY - y) > DRAG_THRESHOLD;
@@ -69,6 +94,9 @@ class Measurement {
 
   onClick(x, y) {
     const clicked = this.searchPoint(x, y);
+    this.viewer.controls.enabled = true;
+    this.viewer.GetCanvas().style.cursor = "default";
+    this.pointerDown = {};
     if (clicked === null) {
       this.addPoint(x, y);
     } else if (this.points.length === 2) {
