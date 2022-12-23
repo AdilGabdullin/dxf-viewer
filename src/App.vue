@@ -17,14 +17,22 @@
                     <q-btn dense flat label="URL" @click="urlDialog = true"/>
                 </template>
             </q-file>
-            <q-toolbar-title :shrink="true" ><div v-html="distArea"></div></q-toolbar-title>
+            <div style="font-size: 1.25rem;" v-if="distance">
+                <q-icon name="straighten" v-responsive.sm.xs />
+                <span v-responsive.md.lg.xl>distance:</span>
+                {{distance}}{{unit}}<span v-if="area">,
+                    <span v-responsive.sm.xs> S:</span>
+                    <span v-responsive.md.lg.xl> area:</span>
+                    {{area}}{{unit}}<sup>2</sup>
+                </span>
+            </div>
             <q-space />
             <q-toggle
                 v-model="showLayers"
                 icon="layers"
                 color="green"
             />
-            <q-btn icon="help" label="About" class="q-ml-lg" @click="aboutDialog = true"></q-btn>
+            <q-btn v-responsive.md.lg.xl icon="help" label="About" class="q-ml-lg" @click="aboutDialog = true"></q-btn>
             <q-btn icon="fab fa-github" color="primary" label="dxf-viewer on GitHub" no-caps
                    class="q-mx-sm github" type="a"
                    href="https://github.com/vagran/dxf-viewer"
@@ -117,7 +125,9 @@ export default {
             urlDialog: false,
             inputUrl: null,
             showLayers: true,
-            distArea: ''
+            distance: 0,
+            area: 0,
+            unit: "m"
         }
     },
 
@@ -190,13 +200,8 @@ export default {
         const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
         const measurement = new Measurement(viewer)
         measurement.subscribe(({distance, area}) => {
-            if(!distance) {
-                this.distArea = ''
-            } else if(!area) {
-                this.distArea = `distance: ${distance.toFixed(2)}m`
-            } else {
-                this.distArea = `distance: ${distance.toFixed(2)}m, area: ${area.toFixed(2)}m<sup>2</sup>`
-            }
+            this.distance = distance;
+            this.area = area;
         })
     },
 

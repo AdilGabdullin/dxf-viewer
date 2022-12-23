@@ -7,15 +7,16 @@ const POINT_RADIUS = 5;
 const LINE_MATERIAL = new THREE.LineBasicMaterial({ color: PRIMARY_COLOR });
 
 class Measurement {
-  constructor(viewer) {
+  constructor(viewer, distanceDigits = 2, areaDigits = 1) {
     this.viewer = viewer;
     this.points = [];
     this.line = null;
     this.closed = false;
-    this.data = {};
     this.pointerDown = {};
     this.observers = [];
     this.initEvents();
+    this.distanceDigits = distanceDigits;
+    this.areaDigits = areaDigits;
   }
 
   subscribe(callback) {
@@ -135,14 +136,16 @@ class Measurement {
       return Math.sqrt(dx * dx + dy * dy);
     };
     const calcDistance = (points, closed) => {
-      let distance = 0.0;
+      if(points.length < 2) return 0;
+      let distance = 0;
       points.forEach((point, index) => {
         if (index === 0 && !closed) return;
         distance += getDistance(point, points.at(index - 1));
       });
-      return distance;
+      return distance.toFixed(this.distanceDigits);
     };
     const calcPolygonArea = (points) => {
+      if(!this.closed) return 0;
       const vertices = points.map((p) => p.position);
       let total = 0;
       for (let i = 0, l = vertices.length; i < l; i++) {
@@ -153,13 +156,12 @@ class Measurement {
         total += addX * addY * 0.5;
         total -= subX * subY * 0.5;
       }
-      return Math.abs(total);
+      return Math.abs(total).toFixed(this.areaDigits);
     };
     const { points, observers, closed } = this;
     const distance = calcDistance(points, closed);
-    const area = closed ? calcPolygonArea(points) : 0.0;
-    this.data = { distance, area };
-    observers.forEach((callback) => callback(this.data));
+    const area = calcPolygonArea(points);
+    observers.forEach((callback) => callback({ distance, area }));
   }
 
   searchPoint(x, y) {
