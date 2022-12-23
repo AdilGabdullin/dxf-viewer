@@ -5,7 +5,7 @@
             <DxfViewer ref="viewer" :dxfUrl="dxfUrl" :fonts="fonts"
                        @dxf-loaded="_OnLoaded" @dxf-cleared="_OnCleared" @dxf-message="_OnMessage" />
         </div>
-        <div class="col-auto layersCol">
+        <div class="col-auto layersCol" v-if="showLayers">
             <LayersList :layers="layers" @toggleLayer="_OnToggleLayer" @toggleAll="_OnToggleAll"/>
         </div>
     </q-page>
@@ -28,6 +28,9 @@ export default {
     props: {
         dxfUrl: {
             type: String
+        },
+        showLayers: {
+            type: Boolean
         }
     },
 

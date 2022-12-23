@@ -17,8 +17,13 @@
                     <q-btn dense flat label="URL" @click="urlDialog = true"/>
                 </template>
             </q-file>
-            <q-toolbar-title :shrink="true" ><span v-html="temp"></span></q-toolbar-title>
+            <q-toolbar-title :shrink="true" ><div v-html="distArea"></div></q-toolbar-title>
             <q-space />
+            <q-toggle
+                v-model="showLayers"
+                icon="layers"
+                color="green"
+            />
             <q-btn icon="help" label="About" class="q-ml-lg" @click="aboutDialog = true"></q-btn>
             <q-btn icon="fab fa-github" color="primary" label="dxf-viewer on GitHub" no-caps
                    class="q-mx-sm github" type="a"
@@ -33,7 +38,7 @@
         </q-toolbar>
     </q-header>
     <q-page-container>
-        <ViewerPage ref="viewerPage" :dxfUrl="dxfUrl">
+        <ViewerPage ref="viewerPage" :dxfUrl="dxfUrl" :showLayers="showLayers">
             <div v-if="inputFile === null"
                  class="centralUploader row justify-center items-center" >
                 <div class="col-auto" style="width: 300px;">
@@ -111,7 +116,8 @@ export default {
             aboutDialog: false,
             urlDialog: false,
             inputUrl: null,
-            temp: ''
+            showLayers: true,
+            distArea: ''
         }
     },
 
@@ -162,6 +168,7 @@ export default {
         const aboutBlock = document.getElementById("about")
         this.aboutHtml = aboutBlock.innerHTML
         aboutBlock.style.display = "none"
+        this.showLayers = window.innerWidth > 720;
         /* For web crawler. */
         document.getElementById("noscript").innerText = aboutBlock.innerText
 
@@ -184,11 +191,11 @@ export default {
         const measurement = new Measurement(viewer)
         measurement.subscribe(({distance, area}) => {
             if(!distance) {
-                this.temp = ''
+                this.distArea = ''
             } else if(!area) {
-                this.temp = `distance: ${distance.toFixed(2)}m`
+                this.distArea = `distance: ${distance.toFixed(2)}m`
             } else {
-                this.temp = `distance: ${distance.toFixed(2)}m, area: ${area.toFixed(2)}m<sup>2</sup>`
+                this.distArea = `distance: ${distance.toFixed(2)}m, area: ${area.toFixed(2)}m<sup>2</sup>`
             }
         })
     },
