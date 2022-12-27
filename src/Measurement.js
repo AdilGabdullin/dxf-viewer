@@ -31,16 +31,16 @@ class Measurement {
     });
     canvas.addEventListener("mousemove", ({ offsetX, offsetY }) => {
       if (!this.active) return;
-      const { x, y } = viewer._CanvasToSceneCoord(offsetX, offsetY);
-      const { grabbing } = this.pointerDown;
-      if (!grabbing) {
-        canvas.style.cursor = this.searchPoint(x, y) ? "pointer" : "default";
-        return;
-      }
-      grabbing.position.x = x;
-      grabbing.position.y = y;
-      this.render();
+      this.onMove(offsetX, offsetY);
     });
+    canvas.addEventListener("touchmove", (e) => {
+      if (!this.active) return;
+      e.preventDefault();
+      const { x, y } = e.target.getBoundingClientRect();
+      const { clientX, clientY } = e.targetTouches[0];
+      this.onMove(clientX - x, clientY - y);
+    });
+
     viewer.Subscribe("pointerdown", (e) => {
       if (!this.active) return;
       const { offsetX, offsetY } = e.detail.domEvent;
@@ -73,6 +73,20 @@ class Measurement {
       }
       this.render();
     });
+  }
+
+  onMove(offsetX, offsetY) {
+    const { viewer } = this;
+    const canvas = viewer.GetCanvas();
+    const { x, y } = viewer._CanvasToSceneCoord(offsetX, offsetY);
+    const { grabbing } = this.pointerDown;
+    if (!grabbing) {
+      canvas.style.cursor = this.searchPoint(x, y) ? "grab" : "default";
+      return;
+    }
+    grabbing.position.x = x;
+    grabbing.position.y = y;
+    this.render();
   }
 
   turnOff() {
