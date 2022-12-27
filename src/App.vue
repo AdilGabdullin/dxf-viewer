@@ -156,20 +156,7 @@ export default {
             this.isLocalFile = true
             this.inputFile = file
             this.dxfUrl = URL.createObjectURL(file)
-            fetch(`./dxf/default-config.json`)
-                .then(res => res.json())
-                .then((config) => {
-                    const {unit, distancePrecision, areaPrecision} = config
-                    const scale = config.relativeToDrawingUnit
-                    this.unit = unit
-                    const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
-                    this.measurement = new Measurement(viewer)
-                    this.measurement.subscribe(({distance, area}) => {
-                        this.distance = (distance / scale).toFixed(distancePrecision)
-                        this.area = (area / scale / scale).toFixed(areaPrecision)
-                    })
-                })
-                .catch(console.error)
+            this.fetchConfig(`./dxf/default-config.json`)
         },
 
         _OnFileCleared() {
@@ -198,6 +185,22 @@ export default {
             this.isLocalFile = false
             this.inputFile = new File(["remote_file"], url, { type: "text/plain" })
             this.dxfUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url)
+        },
+
+        fetchConfig(filename) {
+            return fetch(filename)
+                .then(res => res.json())
+                .then((config) => {
+                    const {unit, distancePrecision, areaPrecision} = config
+                    const scale = config.relativeToDrawingUnit
+                    this.unit = unit
+                    const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
+                    this.measurement = new Measurement(viewer)
+                    this.measurement.subscribe(({distance, area}) => {
+                        this.distance = (distance / scale).toFixed(distancePrecision)
+                        this.area = (area / scale / scale).toFixed(areaPrecision)
+                    })
+                })
         }
     },
 
@@ -226,20 +229,11 @@ export default {
             })
             .catch(console.error)
         fetch(`./dxf/${file}.json`, { method: "HEAD" })
-            .then(res => res.ok ? fetch(`./dxf/${file}.json`) : fetch(`./dxf/default-config.json`))
-            .then(res => res.json())
-            .then((config) => {
-                const {unit, distancePrecision, areaPrecision} = config
-                const scale = config.relativeToDrawingUnit
-                this.unit = unit
-                const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
-                this.measurement = new Measurement(viewer)
-                this.measurement.subscribe(({distance, area}) => {
-                    this.distance = (distance / scale).toFixed(distancePrecision)
-                    this.area = (area / scale / scale).toFixed(areaPrecision)
-                })
-            })
-            .catch(console.error)
+            .then(res => res.ok
+                ? this.fetchConfig(`./dxf/${file}.json`)
+                : Promise.reject()
+            )
+            .catch(() => this.fetchConfig(`./dxf/default-config.json`))
     },
 
     destroyed() {
