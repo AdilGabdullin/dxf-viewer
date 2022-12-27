@@ -156,6 +156,20 @@ export default {
             this.isLocalFile = true
             this.inputFile = file
             this.dxfUrl = URL.createObjectURL(file)
+            fetch(`./dxf/default-config.json`)
+                .then(res => res.json())
+                .then((config) => {
+                    const {unit, distancePrecision, areaPrecision} = config
+                    const scale = config.relativeToDrawingUnit
+                    this.unit = unit
+                    const viewer = this.$refs.viewerPage.$refs.viewer.GetViewer()
+                    this.measurement = new Measurement(viewer)
+                    this.measurement.subscribe(({distance, area}) => {
+                        this.distance = (distance / scale).toFixed(distancePrecision)
+                        this.area = (area / scale / scale).toFixed(areaPrecision)
+                    })
+                })
+                .catch(console.error)
         },
 
         _OnFileCleared() {
@@ -194,11 +208,14 @@ export default {
         this.showLayers = window.innerWidth > 720;
         /* For web crawler. */
         document.getElementById("noscript").innerText = aboutBlock.innerText
+    },
 
+    mounted() {
         /* load file from query param */
         const params = new URLSearchParams(window.location.search)
-        if(!params.has('file')) return;
-        const filename = `./dxf/${params.get('file')}.dxf`
+        const file = params.get('file')
+        if(!file) return;
+        const filename = `./dxf/${file}.dxf`
         fetch(filename)
             .then(res => res.text())
             .then(data => {
@@ -207,10 +224,9 @@ export default {
                 this.isLocalFile = true
                 this.dxfUrl = URL.createObjectURL(file)
             })
-    },
-
-    mounted() {
-        fetch('./config.json')
+            .catch(console.error)
+        fetch(`./dxf/${file}.json`, { method: "HEAD" })
+            .then(res => res.ok ? fetch(`./dxf/${file}.json`) : fetch(`./dxf/default-config.json`))
             .then(res => res.json())
             .then((config) => {
                 const {unit, distancePrecision, areaPrecision} = config
@@ -223,6 +239,7 @@ export default {
                     this.area = (area / scale / scale).toFixed(areaPrecision)
                 })
             })
+            .catch(console.error)
     },
 
     destroyed() {

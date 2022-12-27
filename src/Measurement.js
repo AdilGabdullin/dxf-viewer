@@ -2,8 +2,8 @@ import * as THREE from "three";
 
 const PRIMARY_COLOR = "green";
 const SECONDARY_COLOR = 0x98fb98;
-const DRAG_THRESHOLD = 5;
-const POINT_RADIUS = 5;
+const DRAG_THRESHOLD = 3;
+const POINT_RADIUS = 6;
 const LINE_MATERIAL = new THREE.LineBasicMaterial({ color: PRIMARY_COLOR });
 
 class Measurement {
